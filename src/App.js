@@ -9,26 +9,26 @@ const Wrapper = styled.div`
   min-height: 795px;
   font-family: HelveticaNeue-Light;
   letter-spacing: 5px;
-`
+`;
 
 const Header = styled.h1`
   text-align: center;
   letter-spacing: 10px;
   font-size: 50px;
   margin: 50px 0;
-`
+`;
 
 const ListWrapper = styled.div`
   display: flex;
   justify-content: center;
   flex: 1;
   margin-top: 50px;
-`
+`;
 
 const List = styled.div`
   display: flex;
   flex-direction: column;
-`
+`;
 
 const ListItem = styled.div`
   display: flex;
@@ -44,78 +44,115 @@ const ListItem = styled.div`
   &:hover {
     background: rgba(189, 189, 189, 0.3);
   }
-`
+`;
 
 const ItemInput = styled.input.attrs({
-  type: 'text'
+  type: 'text',
 })`
   font-size: 27px;
   color: #111;
   border: none;
   background: transparent;
   outline: none;
-`
+`;
 const ItemButton = styled.div`
   width: 18px;
   height: 18px;
   border: 2px solid #111;
-  border-radius: 10px;
+  border-radius: 18px;
   margin-right: 20px;
-  background: ${props=> props.isDone ?
-    '#111':'#fff'};
-`
+  background: ${props => (props.isDone ? '#111' : '#fff')};
+`;
+
+let idCounter = 0;
 
 class App extends Component {
-  state={
+  state = {
     typingItem: null,
     activeItemIdx: null,
     todoList: [
-      {text: "Apple", isDone: false},
-      {text: "Juice", isDone: false},
-      {text: "Rolling pin", isDone: false},
-      {text: "Extension cord", isDone: false},
-      {text: "Bread", isDone: false},
-    ]
-  }
+      { id: idCounter++, text: 'Apple', isDone: false },
+      { id: idCounter++, text: 'Juice', isDone: false },
+      { id: idCounter++, text: 'Rolling pin', isDone: false },
+      { id: idCounter++, text: 'Extension cord', isDone: false },
+      { id: idCounter++, text: 'Bread', isDone: false },
+    ],
+  };
 
-  handleTaskPerfomance = (idx) => {
-    const newTodoList = this.state.todoList.map((item, _index) => {
-      if(_index=== idx) {
-        return {text: item.text, isDone: !item.isDone}
-      }else{
-        return item
+  inputs = {};
+
+  handleTaskPerfomance = (id, event) => {
+    const newTodoList = this.state.todoList.map(item => {
+      if (id === item.id) {
+        return { ...item, isDone: !item.isDone };
       }
-    })
+      return item;
+    });
 
-    this.setState({ todoList: newTodoList})
-  }
+    this.setState({ todoList: newTodoList });
+  };
 
-  handleChangeItem = (idx) => (event) => {
-    const newTodoList = this.state.todoList.map((item, _index) => {
-      if(_index=== idx) {
-        return {text: event.target.value, isDone: item.isDone}
-      }else{
-        return item
+  handleChangeItem = (id, event) => {
+    const newTodoList = this.state.todoList.map(item => {
+      if (id === item.id) {
+        return { ...item, text: event.target.value };
       }
-    })
+      return item;
+    });
 
-    this.setState({ todoList: newTodoList.filter(item => item.text !== '')})
-  }
+    this.setState({ todoList: newTodoList });
+  };
+
+  handleEmptyItems = id => {
+    const newTodoList = this.state.todoList.filter(item => {
+      if (id === item.id) {
+        return item.text !== '';
+      }
+      return true;
+    });
+    this.setState({
+      todoList: newTodoList,
+    });
+  };
+
+  createNewItem = (index, event) => {
+    if (event.key === 'Enter') {
+      const before = this.state.todoList.slice(0, index + 1);
+      const after = this.state.todoList.slice(index + 1);
+      const item = {
+        id: idCounter++,
+        text: '',
+        isDone: false,
+      };
+      const newTodoList = [...before, item, ...after];
+      this.setState({ todoList: newTodoList }, () => {
+        const element = this.inputs[item.id];
+        element.focus();
+      });
+    }
+  };
 
   render() {
     return (
       <Wrapper>
-        <Header>
-          TODODO
-        </Header>
+        <Header>TODODO</Header>
         <ListWrapper>
           <List>
-            {this.state.todoList.map((item, idx) =>
-              <ListItem key={idx}>
-                <ItemButton isDone={item.isDone} onClick={() => this.handleTaskPerfomance(idx)}/>
-                <ItemInput value={item.text} onChange={this.handleChangeItem(idx)}/>
+            {this.state.todoList.map((item, index) => (
+              <ListItem key={item.id}>
+                <ItemButton
+                  isDone={item.isDone}
+                  onClick={() => this.handleTaskPerfomance(item.id)}
+                />
+                <ItemInput
+                  innerRef={element => (this.inputs[item.id] = element)}
+                  value={item.text}
+                  onKeyPress={event => this.createNewItem(index, event)}
+                  onChange={event => this.handleChangeItem(item.id, event)}
+                  onBlur={() => this.handleEmptyItems(item.id)}
+                />
               </ListItem>
-            )}
+            ))}
           </List>
         </ListWrapper>
       </Wrapper>
